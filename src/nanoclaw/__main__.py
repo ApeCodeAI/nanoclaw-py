@@ -13,7 +13,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def _async_main() -> None:
+async def _prepare_runtime() -> None:
     # Create directories
     for d in (WORKSPACE_DIR, STORE_DIR, DATA_DIR):
         d.mkdir(parents=True, exist_ok=True)
@@ -26,27 +26,20 @@ async def _async_main() -> None:
     ensure_workspace()
     logger.info("Workspace ready at %s", WORKSPACE_DIR)
 
-    # Setup and run bot
+
+def _run_bot() -> None:
     app = setup_bot()
     logger.info("%s is starting...", ASSISTANT_NAME)
-    await app.initialize()
-    await app.start()
-    await app.updater.start_polling()
+    app.run_polling()
 
-    # Run until interrupted
-    stop_event = asyncio.Event()
-    try:
-        await stop_event.wait()
-    except (KeyboardInterrupt, SystemExit):
-        pass
-    finally:
-        await app.updater.stop()
-        await app.stop()
-        await app.shutdown()
+
+def main() -> None:
+    asyncio.run(_prepare_runtime())
+    _run_bot()
 
 
 if __name__ == "__main__":
     try:
-        asyncio.run(_async_main())
+        main()
     except KeyboardInterrupt:
         logger.info("Shutting down...")

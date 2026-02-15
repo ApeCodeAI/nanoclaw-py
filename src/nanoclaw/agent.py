@@ -28,16 +28,17 @@ logger = logging.getLogger(__name__)
 _agent_lock = asyncio.Lock()
 
 
-def _create_tools(bot: Any, chat_id: int, db_path: str) -> list:
+def _create_tools(bot: Any, chat_id: int, db_path: str, notify_state: dict[str, bool] | None = None) -> list:
     @tool("send_message", "Send a message to the user on Telegram", {"text": str})
     async def send_message(args: dict[str, Any]) -> dict[str, Any]:
         await bot.send_message(chat_id=chat_id, text=args["text"])
+        if notify_state is not None:
+            notify_state["sent"] = True
         return {"content": [{"type": "text", "text": "Message sent."}]}
 
     @tool(
         "schedule_task",
-        "Schedule a task. schedule_type: 'cron', 'interval', or 'once'. "
-        "schedule_value: cron expression, milliseconds, or ISO timestamp.",
+        "Schedule a task. schedule_type: 'cron', 'interval', or 'once'. schedule_value: cron expression, milliseconds, or ISO timestamp.",
         {"prompt": str, "schedule_type": str, "schedule_value": str},
     )
     async def schedule_task(args: dict[str, Any]) -> dict[str, Any]:
@@ -52,10 +53,20 @@ def _create_tools(bot: Any, chat_id: int, db_path: str) -> list:
         elif stype == "once":
             next_run = svalue
         else:
-            return {"content": [{"type": "text", "text": f"Unknown schedule_type: {stype}"}], "is_error": True}
+            return {
+                "content": [{"type": "text", "text": f"Unknown schedule_type: {stype}"}],
+                "is_error": True,
+            }
 
         task_id = await db.create_task(db_path, chat_id, args["prompt"], stype, svalue, next_run)
-        return {"content": [{"type": "text", "text": f"Task {task_id} scheduled. Next run: {next_run}"}]}
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": f"Task {task_id} scheduled. Next run: {next_run}",
+                }
+            ]
+        }
 
     @tool("list_tasks", "List all scheduled tasks", {})
     async def list_tasks(args: dict[str, Any]) -> dict[str, Any]:
@@ -105,13 +116,7 @@ def clear_session_id() -> None:
 
 async def _make_prompt(text: str) -> AsyncGenerator[dict, None]:
     """Create async generator prompt to work around SDK MCP bug."""
-    yield {
-        "type": "user",
-        "message": {
-            "role": "user",
-            "content": text
-        }
-    }
+    yield {"type": "user", "message": {"role": "user", "content": text}}
 
 
 async def run_agent(prompt: str, bot: Any, chat_id: int, db_path: str) -> str:
@@ -131,9 +136,16 @@ async def _run_agent_inner(prompt: str, bot: Any, chat_id: int, db_path: str) ->
 
     options = ClaudeAgentOptions(
         cwd=str(WORKSPACE_DIR),
+        setting_sources=["project"],
         allowed_tools=[
-            "Bash", "Read", "Write", "Edit", "Glob", "Grep",
-            "WebSearch", "WebFetch",
+            "Bash",
+            "Read",
+            "Write",
+            "Edit",
+            "Glob",
+            "Grep",
+            "WebSearch",
+            "WebFetch",
             "mcp__nanoclaw__send_message",
             "mcp__nanoclaw__schedule_task",
             "mcp__nanoclaw__list_tasks",
@@ -169,9 +181,9 @@ async def _run_agent_inner(prompt: str, bot: Any, chat_id: int, db_path: str) ->
     return "".join(response_parts) or "Done."
 
 
-async def run_task_agent(prompt: str, bot: Any, chat_id: int, db_path: str) -> str:
+async def run_task_agent(prompt: str, bot: Any, chat_id: int, db_path: str, notify_state: dict[str, bool] | None = None) -> str:
     """Run agent for scheduled tasks — no session resume."""
-    tools = _create_tools(bot, chat_id, db_path)
+    tools = _create_tools(bot, chat_id, db_path, notify_state)
     mcp_server = create_sdk_mcp_server(name="nanoclaw", tools=tools)
 
     env = {"ANTHROPIC_API_KEY": ANTHROPIC_API_KEY}
@@ -180,9 +192,16 @@ async def run_task_agent(prompt: str, bot: Any, chat_id: int, db_path: str) -> s
 
     options = ClaudeAgentOptions(
         cwd=str(WORKSPACE_DIR),
+        setting_sources=["project"],
         allowed_tools=[
-            "Bash", "Read", "Write", "Edit", "Glob", "Grep",
-            "WebSearch", "WebFetch",
+            "Bash",
+            "Read",
+            "Write",
+            "Edit",
+            "Glob",
+            "Grep",
+            "WebSearch",
+            "WebFetch",
             "mcp__nanoclaw__send_message",
             "mcp__nanoclaw__schedule_task",
             "mcp__nanoclaw__list_tasks",
