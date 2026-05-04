@@ -11,6 +11,8 @@
 [![Telegram Bot API](https://img.shields.io/badge/Telegram_Bot_API-v22-26A5E4?style=flat-square&logo=telegram&logoColor=white)](https://python-telegram-bot.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/ApeCodeAI/nanoclaw-py?style=flat-square&logo=github)](https://github.com/ApeCodeAI/nanoclaw-py/stargazers)
+[![ApeCode.ai](https://img.shields.io/badge/🦧_ApeCode.ai-AI_Tools-orange?style=flat-square)](https://apecode.ai)
+[![ApeRouter](https://img.shields.io/badge/🔗_ApeRouter-LLM_API-blue?style=flat-square)](https://apecode.ai/products/aperouter)
 
 <p>
   <a href="#-quick-start">Quick Start</a> •
@@ -99,6 +101,8 @@ ANTHROPIC_API_KEY=sk-ant-api03-...      # Your Anthropic API Key
 ```
 
 > **Need an Anthropic API Key?** You can get one at [moacode.org](https://moacode.org/register?ref=bbruceyu), which provides Anthropic API access with a friendly interface.
+
+> 💡 **Need an Anthropic API key?** [ApeRouter](https://apecode.ai/products/aperouter) provides a reliable LLM API proxy — no VPN needed for users in China. Supports Claude, GPT, Kimi and more.
 
 ### 4. Run
 
